@@ -203,35 +203,37 @@ namespace kTools.Mirrors
         void BeginCameraRendering(ScriptableRenderContext context, Camera camera)
         {
             // Never render Mirrors for Preview or Reflection cameras
-            if(camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.Reflection)
+            var camData = camera.GetUniversalAdditionalCameraData();
+            if (camData.renderType == CameraRenderType.Overlay)
                 return;
 
             // Profiling command
             CommandBuffer cmd = CommandBufferPool.Get($"Mirror {gameObject.GetInstanceID()}");
-            using (new ProfilingSample(cmd, $"Mirror {gameObject.GetInstanceID()}"))
+            using (new ProfilingScope(cmd, new ProfilingSampler($"Mirror {gameObject.GetInstanceID()}")))
             {
                 ExecuteCommand(context, cmd);
 
                 // Test for Descriptor changes
                 var descriptor = GetDescriptor(camera);
-                if(!descriptor.Equals(m_PreviousDescriptor))
+                if (!descriptor.Equals(m_PreviousDescriptor))
                 {
                     // Dispose RenderTexture
-                    if(m_RenderTexture != null)
+                    if (m_RenderTexture != null)
                     {
                         SafeDestroyObject(m_RenderTexture);
                     }
-                    
+
                     // Create new RenderTexture
                     m_RenderTexture = new RenderTexture(descriptor);
                     m_PreviousDescriptor = descriptor;
                     reflectionCamera.targetTexture = m_RenderTexture;
                 }
-                
+
                 // Execute
                 RenderMirror(context, camera);
                 SetShaderUniforms(context, m_RenderTexture, cmd);
             }
+
             ExecuteCommand(context, cmd);
         }
 
@@ -247,7 +249,6 @@ namespace kTools.Mirrors
             reflectionCamera.projectionMatrix = projectionMatrix;
             
             // Miscellanious camera settings
-            reflectionCamera.cullingMask = layerMask;
             reflectionCamera.allowHDR = allowHDR == MirrorCameraOverride.UseSourceCameraSettings ? camera.allowHDR : false;
             reflectionCamera.allowMSAA = allowMSAA == MirrorCameraOverride.UseSourceCameraSettings ? camera.allowMSAA : false;
             reflectionCamera.enabled = false;
