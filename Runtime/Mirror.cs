@@ -202,7 +202,7 @@ namespace kTools.Mirrors
 #region Rendering
         void BeginCameraRendering(ScriptableRenderContext context, Camera camera)
         {
-            // Never render Mirrors for Preview or Reflection cameras
+            // Never render Mirrors for URP Overlay Camera
             var camData = camera.GetUniversalAdditionalCameraData();
             if (camData.renderType == CameraRenderType.Overlay)
                 return;
